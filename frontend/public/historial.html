@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Historial — La Huaca Dorada</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .badge {
+            background: #FFF3E0;
+            padding: 2px 10px;
+            border-radius: 12px;
+            color: #E65100;
+            font-size: 0.82rem;
+            font-weight: bold;
+        }
+        .resumen-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .resumen-card {
+            background: white;
+            border-left: 4px solid #E65100;
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-size: 0.9rem;
+            color: #333;
+        }
+        .resumen-card span {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #E65100;
+            display: block;
+        }
+        td { max-width: 200px; overflow: hidden;
+             text-overflow: ellipsis; white-space: nowrap; }
+        .sin-datos { text-align: center; color: #999; padding: 30px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <span class="logo">🍽️</span>
+            <div>
+                <h1>La Huaca Dorada</h1>
+                <p>Asistente Virtual</p>
+            </div>
+        </div>
+        <nav>
+            <a href="index.html">Chat</a>
+            <a href="historial.html" class="active">Historial</a>
+            <a href="estadisticas.html">Estadísticas</a>
+        </nav>
+    </header>
+
+    <div class="page-container">
+        <h2>📋 Historial de Conversaciones</h2>
+
+        <!-- RESUMEN -->
+        <div class="resumen-bar" id="resumen-bar"></div>
+
+        <!-- FILTROS -->
+        <div class="filtros">
+            <input type="datetime-local" id="fecha-inicio">
+            <input type="datetime-local" id="fecha-fin">
+            <button onclick="filtrar()">🔍 Filtrar</button>
+            <button onclick="cargarTodo()">📂 Ver todo</button>
+            <button onclick="exportar()">📥 Exportar CSV</button>
+        </div>
+
+        <!-- TABLA -->
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Usuario</th>
+                    <th>Mensaje</th>
+                    <th>Intención</th>
+                    <th>Respuesta</th>
+                    <th>Fecha y Hora (Perú)</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-historial">
+                <tr>
+                    <td colspan="6" class="sin-datos">
+                        Cargando conversaciones...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+     window.onload = () => { cargarTodo(); };
+
+async function cargarTodo() {
+    await cargarHistorial();
+}
+
+async function filtrar() {
+    const inicio = document.getElementById("fecha-inicio").value;
+    const fin    = document.getElementById("fecha-fin").value;
+    if (!inicio || !fin) {
+        alert("Selecciona fecha de inicio y fin");
+        return;
+    }
+    await cargarHistorial(inicio, fin);
+}
+
+async function cargarHistorial(inicio = null, fin = null) {
+    const tbody = document.getElementById("tabla-historial");
+    tbody.innerHTML = `<tr><td colspan="6" class="sin-datos">Cargando...</td></tr>`;
+    try {
+        let url = "http://localhost:3978/api/historial";
+        if (inicio && fin) url += `?inicio=${inicio}&fin=${fin}`;
+
+        const resp = await fetch(url);
+        const data = await resp.json();
+
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="sin-datos">Sin conversaciones en ese rango</td></tr>`;
+            mostrarResumen([]);
+            return;
+        }
+
+        tbody.innerHTML = data.map((r, i) => `
+            <tr>
+                <td>${i + 1}</td>
+                <td>${r.usuario || "Cliente"}</td>
+                <td title="${r.mensaje}">${r.mensaje}</td>
+                <td><span class="badge">${r.intencion || "—"}</span></td>
+                <td title="${r.respuesta}">${r.respuesta.substring(0, 40)}...</td>
+                <td>${r.fecha_hora}</td>
+            </tr>
+        `).join("");
+
+        mostrarResumen(data);
+
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="6" class="sin-datos" style="color:red">
+            Error al conectar con el servidor</td></tr>`;
+    }
+}
+
+function mostrarResumen(data) {
+    const total = data.length;
+    const intenciones = {};
+    data.forEach(r => {
+        if (r.intencion && r.intencion !== "—")
+            intenciones[r.intencion] = (intenciones[r.intencion] || 0) + 1;
+    });
+    const masUsada = Object.entries(intenciones).sort((a,b) => b[1]-a[1])[0];
+
+    document.getElementById("resumen-bar").innerHTML = `
+        <div class="resumen-card">
+            <span>${total}</span>
+            Total conversaciones
+        </div>
+        <div class="resumen-card">
+            <span>${Object.keys(intenciones).length}</span>
+            Intenciones detectadas
+        </div>
+        ${masUsada ? `
+        <div class="resumen-card">
+            <span>${masUsada[1]}</span>
+            Más usada: ${masUsada[0]}
+        </div>` : ""}
+    `;
+}
+
+function exportar() {
+    const filas = document.querySelectorAll("#tabla-historial tr");
+    if (filas.length === 0) { alert("No hay datos para exportar"); return; }
+    let csv = "N,Usuario,Mensaje,Intencion,Respuesta,FechaHora\n";
+    filas.forEach(f => {
+        const celdas = f.querySelectorAll("td");
+        if (celdas.length > 1) {
+            csv += [...celdas].map(c => `"${c.textContent.trim()}"`).join(",") + "\n";
+        }
+    });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `historial_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+}
+    </script>
+</body>
+</html>

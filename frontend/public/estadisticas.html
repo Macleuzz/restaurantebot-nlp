@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Estadísticas — La Huaca Dorada</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <span class="logo">🍽️</span>
+            <div>
+                <h1>La Huaca Dorada</h1>
+                <p>Asistente Virtual</p>
+            </div>
+        </div>
+        <nav>
+            <a href="index.html">Chat</a>
+            <a href="historial.html">Historial</a>
+            <a href="estadisticas.html" class="active">Estadísticas</a>
+        </nav>
+    </header>
+
+    <div class="page-container">
+        <h2>📊 Estadísticas de Uso</h2>
+        <div style="background:white;padding:20px;
+                    border-radius:12px;margin-bottom:20px">
+            <canvas id="grafico" height="100"></canvas>
+        </div>
+        <div id="resumen" style="display:flex;gap:16px;flex-wrap:wrap"></div>
+    </div>
+
+    <script>
+        async function cargarEstadisticas() {
+            try {
+                const resp = await fetch(
+                    "http://localhost:3978/api/estadisticas"
+                );
+                const data = await resp.json();
+
+                const labels = data.map(d => d.intencion);
+                const values = data.map(d => d.total);
+                const colores = [
+                    "#E65100","#4E342E","#2E7D32",
+                    "#1565C0","#6A1B9A"
+                ];
+
+                new Chart(document.getElementById("grafico"), {
+                    type: "bar",
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: "Consultas por intención",
+                            data: values,
+                            backgroundColor: colores,
+                            borderRadius: 8,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            title: {
+                                display: true,
+                                text: "Intenciones más consultadas",
+                                font: { size: 16 }
+                            }
+                        }
+                    }
+                });
+
+                const total = values.reduce((a,b) => a+b, 0);
+                document.getElementById("resumen").innerHTML =
+                    data.map((d,i) => `
+                        <div style="background:white;padding:16px;
+                            border-radius:10px;border-left:4px solid
+                            ${colores[i]};min-width:160px">
+                            <div style="font-size:1.5rem;font-weight:bold;
+                                color:${colores[i]}">${d.total}</div>
+                            <div style="color:#666;font-size:0.85rem">
+                                ${d.intencion}</div>
+                        </div>
+                    `).join("");
+            } catch(e) {
+                document.querySelector(".page-container").innerHTML +=
+                    "<p style='color:red'>Error al cargar estadísticas</p>";
+            }
+        }
+
+        cargarEstadisticas();
+    </script>
+</body>
+</html>

@@ -3,7 +3,7 @@ import config
 
 async def analizar(texto: str):
     url = (f"{config.LANGUAGE_ENDPOINT}language/:analyze-conversations"
-           f"?api-version=2022-10-01-preview")
+           f"?api-version=2024-11-15-preview")
     headers = {
         "Ocp-Apim-Subscription-Key": config.LANGUAGE_KEY,
         "Content-Type": "application/json"
@@ -26,10 +26,14 @@ async def analizar(texto: str):
         async with session.post(url, headers=headers, json=body) as resp:
             data = await resp.json()
 
-    resultado   = data["result"]["prediction"]
-    intencion   = resultado["topIntent"]
-    confianza   = resultado["intents"][0]["confidenceScore"]
-    entidades   = {}
+    if "result" not in data:
+        print(f"Error Azure: {data}")
+        return "None", {}, 0.0
+
+    resultado = data["result"]["prediction"]
+    intencion = resultado["topIntent"]
+    confianza = resultado["intents"][0]["confidenceScore"]
+    entidades = {}
     for e in resultado.get("entities", []):
         entidades[e["category"]] = e["text"]
 

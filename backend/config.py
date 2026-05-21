@@ -13,7 +13,7 @@ SQL_DATABASE = os.getenv("SQL_DATABASE")
 SQL_USER     = os.getenv("SQL_USER")
 SQL_PASSWORD = os.getenv("SQL_PASSWORD")
 
-SENDGRID_KEY        = os.getenv("SENDGRID_KEY")
+SENDGRID_KEY        = os.getenv("SENDGRID_KEY") 
 EMAIL_RESTAURANTE   = os.getenv("EMAIL_RESTAURANTE")
 
 MicrosoftAppId       = os.getenv("MicrosoftAppId", "")

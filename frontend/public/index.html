@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Huaca Dorada — Asistente Virtual</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-content">
+            <span class="logo">🍽️</span>
+            <div>
+                <h1>La Huaca Dorada</h1>
+                <p>Asistente Virtual</p>
+            </div>
+            <span class="status">● En línea</span>
+        </div>
+        <nav>
+            <a href="index.html">Chat</a>
+            <a href="historial.html">Historial</a>
+            <a href="estadisticas.html">Estadísticas</a>
+        </nav>
+    </header>
+
+    <!-- CHAT -->
+    <div class="chat-container">
+        <div class="messages" id="messages"></div>
+
+        <!-- TYPING INDICATOR -->
+        <div class="typing" id="typing" style="display:none">
+            <span></span><span></span><span></span>
+        </div>
+
+        <!-- INPUT -->
+        <div class="input-area">
+            <input
+                type="text"
+                id="input"
+                placeholder="Escribe tu mensaje..."
+                onkeypress="if(event.key==='Enter') enviar()"
+            />
+            <button id="btn-mic" onclick="activarVoz()" title="Hablar">🎤</button>
+            <button onclick="enviar()">Enviar</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="voz.js"></script>
+</body>
+</html>
